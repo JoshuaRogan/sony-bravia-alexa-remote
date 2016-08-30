@@ -1,0 +1,31 @@
+{
+  "intents": [
+    {
+      "intent": "ToggleMute"
+    },
+    {
+      "intent": "TogglePower"
+    },
+    {
+      "intent": "VolumeUp"
+    },
+    {
+      "intent": "VolumeDown"
+    },
+    {
+      "intent": "TogglePlay"
+    },
+    {
+      "intent": "FireButton",
+      "slots": [
+        {
+          "name": "Button",
+          "type": "LIST_OF_BUTTONS"
+        }
+      ]
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    }
+  ]
+}
