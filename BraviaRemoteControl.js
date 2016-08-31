@@ -23,9 +23,12 @@ class BraviaRemoteControl {
 	 * @return {BraviaRemoteControl}
 	 */
 	constructor(domain, port, authKey = '0000') {
+		this.debug = false;
 		this.domain = domain;
 		this.port = port;
 		this.authKey = authKey;
+		this.activeRequest = false;
+		this.activeSequence = false;
 	}
 
 	/**
@@ -35,10 +38,24 @@ class BraviaRemoteControl {
 	sendIRCCSignalSeq(actionKeySeq) {
 		let commands = actionKeySeq.split(' ');
 
-		// Needs to be synchournous
-		for (let command of commands) {
-			this.sendIRCCSignal(command);
-		}
+		// Fire off the commands one after another
+		return new Promise((res, reject) => {
+			this.activeSequence = true;
+			let index = 0;
+
+			let next = () => {
+				if (index < commands.length) {
+					this.sendIRCCSignal(commands[index++]).then(next, reject);
+				} else {
+					console.log(`Sequence '${actionKeySeq}' finished.`);
+					this.activeSequence = false;
+					resolve();
+				}
+			}
+
+			next();
+		});
+
 	}
 
 	/**
@@ -47,52 +64,54 @@ class BraviaRemoteControl {
 	 * @param  {Function} callback
 	 * @return {[type]}           [description]
 	 */
-	sendIRCCSignal(actionKey, callback) {
-		return this.sendDirectIRCCSignal(BraviaRemoteControl.getIRCCCode(actionKey), callback);
+	sendIRCCSignal(actionKey) {
+		return this.sendDirectIRCCSignal(BraviaRemoteControl.getIRCCCode(actionKey));
 	}
 
 	/**
 	 * Send an IRCC signal to the TV
 	 * @param  {String} actionKey
 	 * @param  {Function} callback
-	 * @return {[type]}           [description]
+	 * @return {Promise}
 	 */
-	sendDirectIRCCSignal(IRCCCode, callback) {
+	sendDirectIRCCSignal(IRCCCode) {
 		let body = this.getIRCCCodeXMLBody(IRCCCode);
 		let options = this.getRequestOptions();
-
-		this.sendHTTPRequest(options, body, () => {console.log('Done')});
+		return this.sendHTTPRequest(options, body);
 	}
 
-
 	/**
-	 * Send an HTTP request to a bravia TB
-	 * @param  {Object}   options
-	 * @param  {String}   body
-	 * @param  {Function} callback
+	 * Send an HTTP Request to a Bravia TV
+	 * @param  {Object} options
+	 * @param  {String} body
+	 * @return {Promise}
 	 */
-	sendHTTPRequest(options, body, callback) {
-		let req = http.request(options, (res) => {
-			console.log(`STATUS: ${res.statusCode}`);
-			console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
-			res.setEncoding('utf8');
+	sendHTTPRequest(options, body) {
+		return new Promise((resolve, reject) => {
+			let req = http.request(options, (res) => {
+				this.activeRequest = true;
 
-			res.on('data', (chunk) => {
-				console.log(`BODY: ${chunk}`);
+				this.debugLog(`STATUS: ${res.statusCode}`);
+				this.debugLog(`HEADERS: ${JSON.stringify(res.headers)}`);
+				res.setEncoding('utf8');
+
+				res.on('data', (chunk) => {
+					this.debugLog(`BODY: ${chunk}`);
+				});
+
+				res.on('end', () => {
+					this.activeRequest = false;
+					resolve();
+				});
 			});
 
-			res.on('end', () => {
-				console.log('No more data in response.');
-				if(callback) callback();
+			req.on('error', (e) => {
+				reject(`problem with request: ${e.message}`);
 			});
-		});
 
-		req.on('error', (e) => {
-		  console.log(`problem with request: ${e.message}`);
+			req.write(body);
+			req.end();
 		});
-
-		req.write(body);
-		req.end();
 	}
 
 	/**
@@ -122,6 +141,16 @@ class BraviaRemoteControl {
 		return `<?xml version="1.0"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:X_SendIRCC xmlns:u="urn:schemas-sony-com:service:IRCC:1"><IRCCCode>${IRCCCode}</IRCCCode></u:X_SendIRCC></s:Body></s:Envelope>`;
 	}
 
+
+	/**
+	 * Simple debug logger
+	 */
+	debugLog() {
+		if (this.debug) {
+			console.log(...arguments);
+		}
+	}
+
 	/**
 	 * Get the remote IRCCCode control values
 	 * @param  {String} actionName
@@ -131,11 +160,14 @@ class BraviaRemoteControl {
 		return actionMap[actionName] ? actionMap[actionName] : false;
 	}
 
+
+
 }
 
-const remote = new BraviaRemoteControl('josh-rogan.dynu.com', 4444);
+const remote = new BraviaRemoteControl('josh-rogan.dynu.com', 44444);
 const localRemote = new BraviaRemoteControl('192.168.1.2', 80);
-localRemote.sendIRCCSignalSeq('home home home down down down down down confirm');
+remote.sendIRCCSignalSeq('left up right');
+
 // localRemote.sendIRCCSignal('up');
 // localRemote.sendIRCCSignal('up');
 // localRemote.sendDirectIRCCSignal('AAAAAQAAAAEAAABgAw==');
