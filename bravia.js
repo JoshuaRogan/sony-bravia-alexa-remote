@@ -69,5 +69,5 @@ class AlexaBravia {
 }
 
 const alexa = new AlexaBravia();
-alexa.openApp('sling');
-// alexa.command('exit');
+// alexa.openApp('sling');
+alexa.command('exit');
