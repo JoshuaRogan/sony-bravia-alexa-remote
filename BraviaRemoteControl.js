@@ -1,4 +1,10 @@
+'use strict';
+
 const http = require('http');
+const httpDebug = false;
+
+const DEFAULT_TIME_BETWEEN_COMMANDS = 350;
+const PAUSED_TIME_BETWEEN_COMMANDS = 3000;
 
 const braviaIRCCEndPoint = '/sony/IRCC';
 let actionMap = {
@@ -10,6 +16,9 @@ let actionMap = {
 	right: 'AAAAAQAAAAEAAAAzAw==',
 	confirm: 'AAAAAQAAAAEAAABlAw==',
 	exit: 'AAAAAQAAAAEAAABjAw==',
+	mute: 'AAAAAQAAAAEAAAAUAw==',
+	volumeUp: 'AAAAAQAAAAEAAAASAw==',
+	volumeDown: 'AAAAAQAAAAEAAAATAw==',
 };
 
 
@@ -29,23 +38,25 @@ class BraviaRemoteControl {
 		this.authKey = authKey;
 		this.activeRequest = false;
 		this.activeSequence = false;
+		this.delay = DEFAULT_TIME_BETWEEN_COMMANDS;
+		this.openedApp = null;
 	}
 
 	/**
 	 * Send a sequence of commands
 	 * @param  {String} actionKeySeq sequence of commands e.g 'down up left right'
 	 */
-	sendIRCCSignalSeq(actionKeySeq) {
+	sendActionSequence(actionKeySeq) {
 		let commands = actionKeySeq.split(' ');
 
 		// Fire off the commands one after another
-		return new Promise((res, reject) => {
+		return new Promise((resolve, reject) => {
 			this.activeSequence = true;
 			let index = 0;
 
 			let next = () => {
 				if (index < commands.length) {
-					this.sendIRCCSignal(commands[index++]).then(next, reject);
+					this.sendAction(commands[index++]).then(next, reject);
 				} else {
 					console.log(`Sequence '${actionKeySeq}' finished.`);
 					this.activeSequence = false;
@@ -55,17 +66,37 @@ class BraviaRemoteControl {
 
 			next();
 		});
-
 	}
 
 	/**
-	 * Send an IRCC signal to the TV
+	 * Send a sequence of commands that navigates to an open that
+	 * will open. Command starts with home, long pause, sequence, then confirm.
+	 * @param  {string} actionKeySeq
+	 * @param  {string} appName
+	 * @return {Promise}
+	 */
+	openAppSeq(actionKeySeq, appName) {
+		this.delay = PAUSED_TIME_BETWEEN_COMMANDS; // Set longer delay
+
+		return this.sendActionSequence('exit home')
+			.then(()=> {
+				this.delay = DEFAULT_TIME_BETWEEN_COMMANDS;
+				return this.sendActionSequence(actionKeySeq);
+			})
+			.then(()=> {
+				this.openedApp = appName;
+				return this.sendActionSequence('confirm').then(() => console.log(`${appName} was opened`));
+			});
+	}
+
+	/**
+	 * Send an IRCC signal to the TV by looking up 
 	 * @param  {String} actionKey
 	 * @param  {Function} callback
 	 * @return {[type]}           [description]
 	 */
-	sendIRCCSignal(actionKey) {
-		return this.sendDirectIRCCSignal(BraviaRemoteControl.getIRCCCode(actionKey));
+	sendAction(actionKey) {
+		return this.sendIRCCSignal(BraviaRemoteControl.getIRCCCode(actionKey));
 	}
 
 	/**
@@ -74,7 +105,7 @@ class BraviaRemoteControl {
 	 * @param  {Function} callback
 	 * @return {Promise}
 	 */
-	sendDirectIRCCSignal(IRCCCode) {
+	sendIRCCSignal(IRCCCode) {
 		let body = this.getIRCCCodeXMLBody(IRCCCode);
 		let options = this.getRequestOptions();
 		return this.sendHTTPRequest(options, body);
@@ -91,17 +122,17 @@ class BraviaRemoteControl {
 			let req = http.request(options, (res) => {
 				this.activeRequest = true;
 
-				this.debugLog(`STATUS: ${res.statusCode}`);
-				this.debugLog(`HEADERS: ${JSON.stringify(res.headers)}`);
+				if(httpDebug) console.log(`STATUS: ${res.statusCode}`);
+				if(httpDebug) console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
 				res.setEncoding('utf8');
 
 				res.on('data', (chunk) => {
-					this.debugLog(`BODY: ${chunk}`);
+					if(httpDebug) console.log(`BODY: ${chunk}`);
 				});
 
 				res.on('end', () => {
 					this.activeRequest = false;
-					resolve();
+					setTimeout(() => { resolve(); }, this.delay);
 				});
 			});
 
@@ -141,16 +172,6 @@ class BraviaRemoteControl {
 		return `<?xml version="1.0"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:X_SendIRCC xmlns:u="urn:schemas-sony-com:service:IRCC:1"><IRCCCode>${IRCCCode}</IRCCCode></u:X_SendIRCC></s:Body></s:Envelope>`;
 	}
 
-
-	/**
-	 * Simple debug logger
-	 */
-	debugLog() {
-		if (this.debug) {
-			console.log(...arguments);
-		}
-	}
-
 	/**
 	 * Get the remote IRCCCode control values
 	 * @param  {String} actionName
@@ -164,11 +185,4 @@ class BraviaRemoteControl {
 
 }
 
-const remote = new BraviaRemoteControl('josh-rogan.dynu.com', 44444);
-const localRemote = new BraviaRemoteControl('192.168.1.2', 80);
-remote.sendIRCCSignalSeq('left up right');
-
-// localRemote.sendIRCCSignal('up');
-// localRemote.sendIRCCSignal('up');
-// localRemote.sendDirectIRCCSignal('AAAAAQAAAAEAAABgAw==');
-// remote.sendIRCCSignal('power');
+module.exports = BraviaRemoteControl;
