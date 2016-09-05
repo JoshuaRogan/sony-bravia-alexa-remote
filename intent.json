@@ -23,7 +23,7 @@
       "slots": [
         {
           "name": "Sequence",
-          "type": "LIST_OF_SIGNALS"
+          "type": "LIST_OF_SEQUENCES"
         }
       ]
     },

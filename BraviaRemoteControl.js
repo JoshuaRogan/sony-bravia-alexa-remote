@@ -7,7 +7,8 @@ const DEFAULT_TIME_BETWEEN_COMMANDS = 350;
 const PAUSED_TIME_BETWEEN_COMMANDS = 3000;
 
 const braviaIRCCEndPoint = '/sony/IRCC';
-let actionMap = {
+
+const actionMap = {
 	power: 'AAAAAQAAAAEAAAAVAw==',
 	home: 'AAAAAQAAAAEAAABgAw==',
 	down: 'AAAAAQAAAAEAAAB1Aw==',
@@ -17,8 +18,19 @@ let actionMap = {
 	confirm: 'AAAAAQAAAAEAAABlAw==',
 	exit: 'AAAAAQAAAAEAAABjAw==',
 	mute: 'AAAAAQAAAAEAAAAUAw==',
-	volumeUp: 'AAAAAQAAAAEAAAASAw==',
-	volumeDown: 'AAAAAQAAAAEAAAATAw==',
+	volumeup: 'AAAAAQAAAAEAAAASAw==',
+	volumedown: 'AAAAAQAAAAEAAAATAw==',
+};
+
+/* Alternate names for actions */
+const actionLookUpTable = {
+	'volume up': 'volumeup',
+	'volume down': 'volumedown',
+	'toggle power': 'power',
+	'enter': 'confirm',
+	'toggle': 'power',
+	'quite': 'exit',
+	'shut off': 'power',
 };
 
 
@@ -90,13 +102,14 @@ class BraviaRemoteControl {
 	}
 
 	/**
-	 * Send an IRCC signal to the TV by looking up 
+	 * Send an IRCC signal to the TV by looking up
 	 * @param  {String} actionKey
 	 * @param  {Function} callback
 	 * @return {[type]}           [description]
 	 */
 	sendAction(actionKey) {
-		return this.sendIRCCSignal(BraviaRemoteControl.getIRCCCode(actionKey));
+		let action = this.getAction(actionKey);
+		return this.sendIRCCSignal(BraviaRemoteControl.getIRCCCode(action));
 	}
 
 	/**
@@ -179,6 +192,24 @@ class BraviaRemoteControl {
 	 */
 	static getIRCCCode(actionName) {
 		return actionMap[actionName] ? actionMap[actionName] : false;
+	}
+
+	/**
+	 * Determines if an action is valid
+	 * @param  {String}  action
+	 * @return {Boolean}
+	 */
+	validAction(action) {
+		return actionMap[this.getAction(action)] !== undefined;
+	}
+
+	/**
+	 * Check the lookup table for an alternate action name
+	 * @param  {string} action
+	 * @return {string}
+	 */
+	getAction(action) {
+		return actionLookUpTable[action] ? actionLookUpTable[action] : action;
 	}
 
 
