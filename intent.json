@@ -1,26 +1,29 @@
 {
   "intents": [
     {
-      "intent": "ToggleMute"
-    },
-    {
-      "intent": "TogglePower"
-    },
-    {
-      "intent": "VolumeUp"
-    },
-    {
-      "intent": "VolumeDown"
-    },
-    {
-      "intent": "TogglePlay"
-    },
-    {
-      "intent": "FireButton",
+      "intent": "OpenAppIntent",
       "slots": [
         {
-          "name": "Button",
-          "type": "LIST_OF_BUTTONS"
+          "name": "AppName",
+          "type": "LIST_OF_APPS"
+        }
+      ]
+    },
+    {
+      "intent": "SendSignalIntent",
+      "slots": [
+        {
+          "name": "Action",
+          "type": "LIST_OF_ACTIONS"
+        }
+      ]
+    },
+    {
+      "intent": "SendSignalSequenceIntent",
+      "slots": [
+        {
+          "name": "Sequence",
+          "type": "LIST_OF_SIGNALS"
         }
       ]
     },

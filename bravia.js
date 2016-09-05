@@ -12,7 +12,7 @@ const seqOpenSling= seqApps + 'right';
 
 class AlexaBravia {
 
-	constructor() {
+	constructor(domain, port = 80) {
 		this.extRemote = new BraviaRemoteControl('josh-rogan.dynu.com', 44444);
 		this.localRemote = new BraviaRemoteControl('192.168.1.2', 80);
 		this.remote = this.localRemote;
@@ -39,8 +39,8 @@ class AlexaBravia {
 
 	/**
 	 * Send commands to the TV such as home, exit, play, pause, mute, etc.
-	 * @param  {[type]} commandName [description]
-	 * @return {[type]}             [description]
+	 * @param  {String} commandName
+	 * @return {Promise}
 	 */
 	command(commandName) {
 		switch (commandName) {
@@ -59,6 +59,11 @@ class AlexaBravia {
 			case 'mute':
 		  		return this.remote.sendAction('mute');
 				break;
+			case 'volumeUp':
+		  		return this.remote.sendAction('volumeUp');
+		  	case 'volumeDown':
+		  		return this.remote.sendAction('volumeDown');
+				break;
 			case 'unmute':
 				return this.remote.sendAction('mute')
 					.then( ()=> this.remote.sendAction('volumeUp'));
@@ -66,8 +71,12 @@ class AlexaBravia {
 		}
 	}
 
+	// TODO: Run a sequence of commands release 2.0
+	sequence(sequenceString) { return 'stub' ;}
 }
 
 const alexa = new AlexaBravia();
-// alexa.openApp('sling');
-alexa.command('exit');
+
+
+// alexa.openApp('mlb');
+alexa.command('volumeUp');
