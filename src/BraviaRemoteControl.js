@@ -20,6 +20,8 @@ const actionMap = {
 	mute: 'AAAAAQAAAAEAAAAUAw==',
 	'volume up': 'AAAAAQAAAAEAAAASAw==',
 	'volume down': 'AAAAAQAAAAEAAAATAw==',
+	pause: 'AAAAAgAAAJcAAAAZAw==',
+	play: 'AAAAAgAAAJcAAAAaAw==',
 };
 
 /* Alternate names for actions */
