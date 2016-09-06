@@ -5,10 +5,14 @@ const BraviaRemoteControl = require ('./BraviaRemoteControl');
 const Alexa = require ('./Alexa');
 
 // Shortcuts to sequences that open app (depends on layout of items on tv)
-const seqApps = 'down down down down ';
-const seqOpenMLB = seqApps;
-const seqOpenPlex = seqApps + 'down';
-const seqOpenSling= seqApps + 'right';
+const seqGetToApps = 'down down' + ' ';
+
+// Unique to me
+const apps = {
+	mlb: seqGetToApps,
+	plex: seqGetToApps + 'down',
+	sling: seqGetToApps + 'right',
+};
 
 class AlexaBravia extends Alexa {
 
@@ -25,17 +29,20 @@ class AlexaBravia extends Alexa {
 	 * @return {Promise}
 	 */
 	openApp(appName) {
-		switch (appName) {
-			case 'plex':
-				return this.remote.openAppSeq(seqOpenPlex, appName);
-				break;
-			case 'sling':
-				return this.remote.openAppSeq(seqOpenSling, appName);
-				break;
-			case 'mlb':
-				return this.remote.openAppSeq(seqOpenMLB, appName);
-				break;
+		if (this.isValidAppName(appName)) {
+			return this.remote.openAppSeq(apps[appName], appName);
 		}
+
+		return false;
+	}
+
+	/**
+	 * Checks if a potential app name is valid
+	 * @param  {String}  appName
+	 * @return {Boolean}
+	 */
+	isValidAppName(appName) {
+		return apps[appName] !== undefined;
 	}
 
 	/**
@@ -75,8 +82,20 @@ class AlexaBravia extends Alexa {
 		return this.remote.sendActionSequence(seq);
 	}
 
+	/**
+	 * Get the action value in the slot
+	 * @return {String|Boolean}
+	 */
 	getActionValue() {
 		return this.getSlotValue('Action');
+	}
+
+	/**
+	 * Get the app name value in the slot
+	 * @return {String|Boolean}
+	 */
+	getAppNameValue() {
+		return this.getSlotValue('AppName');
 	}
 
 	/**
@@ -86,31 +105,42 @@ class AlexaBravia extends Alexa {
 	intentHandler() {
 		let intent = this.getIntent();
 
-		if(intent.name = 'SendActionIntent') {
+		if(this.getIntentName() == 'SendActionIntent') {
 			let action = this.getActionValue();
+
 			if(action) {
 				this.setTitle(`Sending action ${action}`);
 				this.setSpeechOutput(`Sending action ${action}`);
 
 				if(this.command(action)) {
-					let speechlet = this.buildSpeechletResponse('Non Intent', 'No intent');
-					let res = this.buildResponse(speechlet);
-					this.success(res);
+					this.success();
 				} else {
 					this.fail('Not a valid action');
 				}
 			} else {
 				this.fail('Action not found');
 			}
+
+		} else if (this.getIntentName() == 'OpenAppIntent') {
+			let appName = this.getAppNameValue();
+
+			if(this.isValidAppName(appName)) {
+				this.setTitle(`Opening app ${appName}`);
+				this.setSpeechOutput(`Opening app ${appName}`);
+				this.openApp(appName);
+				this.success();
+			} else {
+				this.fail(`${appName} is not a valid app name.`);
+			}
+
 		} else {
 			this.fail('Non Valid Intent');
 		}
+
 	}
 
-
-
 	/**
-	 * Handler that all requests are routed through
+	 * Handler that all requests are routed through should be outside of this
 	 * @param  {object} event
 	 * @param  {object} context
 	 */
@@ -121,9 +151,8 @@ class AlexaBravia extends Alexa {
 			if (alexa.isIntent()) {
 				alexa.intentHandler();
 			} else {
-				let speechlet = alexa.buildSpeechletResponse('Non Intent', 'No intent');
-				let res = alexa.buildResponse(speechlet);
-				alexa.success(res);
+				alexa.setAlexa(`Welcome`, `Welcome to the tv remote control app!`);
+				alexa.success();
 			}
 
 		} catch (e) {
@@ -136,5 +165,4 @@ class AlexaBravia extends Alexa {
 	sequence(sequenceString) { return 'stub' ;}
 }
 
-exports.handler = AlexaBravia.alexaHandler;
-
+module.exports = AlexaBravia;

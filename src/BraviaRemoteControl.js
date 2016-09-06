@@ -18,19 +18,13 @@ const actionMap = {
 	confirm: 'AAAAAQAAAAEAAABlAw==',
 	exit: 'AAAAAQAAAAEAAABjAw==',
 	mute: 'AAAAAQAAAAEAAAAUAw==',
-	volumeup: 'AAAAAQAAAAEAAAASAw==',
-	volumedown: 'AAAAAQAAAAEAAAATAw==',
+	'volume up': 'AAAAAQAAAAEAAAASAw==',
+	'volume down': 'AAAAAQAAAAEAAAATAw==',
 };
 
 /* Alternate names for actions */
 const actionLookUpTable = {
-	'volume up': 'volumeup',
-	'volume down': 'volumedown',
-	'toggle power': 'power',
 	'enter': 'confirm',
-	'toggle': 'power',
-	'quite': 'exit',
-	'shut off': 'power',
 };
 
 
@@ -211,8 +205,6 @@ class BraviaRemoteControl {
 	getAction(action) {
 		return actionLookUpTable[action] ? actionLookUpTable[action] : action;
 	}
-
-
 
 }
 

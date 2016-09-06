@@ -1,0 +1,9 @@
+OpenAppIntent open {AppName}
+OpenAppIntent launch {AppName}
+OpenAppIntent run {AppName}
+SendActionIntent {Action}
+SendActionIntent remote {Action}
+SendActionIntent fire {Action}
+SendActionIntent send {Action}
+SendActionIntent action {Action}
+SendActionSequenceIntent sequence {Sequence}

@@ -10,7 +10,7 @@
       ]
     },
     {
-      "intent": "SendSignalIntent",
+      "intent": "SendActionIntent",
       "slots": [
         {
           "name": "Action",
@@ -19,7 +19,7 @@
       ]
     },
     {
-      "intent": "SendSignalSequenceIntent",
+      "intent": "SendActionSequenceIntent",
       "slots": [
         {
           "name": "Sequence",
