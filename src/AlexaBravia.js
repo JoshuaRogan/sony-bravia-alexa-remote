@@ -20,7 +20,7 @@ class AlexaBravia extends Alexa {
 		super(event, context);
 		this.extRemote = new BraviaRemoteControl('josh-rogan.dynu.com', 44444);
 		this.localRemote = new BraviaRemoteControl('192.168.1.2', 80);
-		this.remote = this.localRemote;
+		this.remote = this.extRemote;
 	}
 
 	/**

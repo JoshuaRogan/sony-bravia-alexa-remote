@@ -4,8 +4,8 @@
   "description": "Remote control and alex controller to send commands to a Sony Bravia Andriod TV",
   "main": "dist/index.js",
   "scripts": {
-    "build": "rm -f dist/* && babel src -d dist --source-maps",
-    "zip": "npm run build && rm -f lambda.zip && cd dist && zip ../lambda.zip *"
+    "build": "rm -f dist/* && babel src -d dist --source-maps && npm run zip",
+    "zip": "rm -f lambda.zip && cd dist && zip ../lambda.zip *"
   },
   "author": "",
   "license": "ISC",
