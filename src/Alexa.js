@@ -9,6 +9,9 @@ class Alexa {
 		this.context = context;
 		this.sessionAttributes = {};
 
+		/** @type {Boolean} quiet alexa */
+		this.quiet = true;
+
 		// Default responses
 		this.title = 'Default Title';
 		this.speechOutput = 'Default Speech Output';
@@ -129,8 +132,9 @@ class Alexa {
 	/**
 	 * Send the request back using the context success handlers
 	 */
-	success() {
+	success(quiet = this.quiet) {
 		let res = this.getSpeechResponse();
+		if(quiet) res.response.outputSpeech.text = '';
 		this.debugLog('Sending Response:\n\n', res);
 		this.context.succeed(res);
 	}
@@ -145,7 +149,7 @@ class Alexa {
 		console.log(`Failure ${msg}`);
 		this.addSessionAttributes('failureMSG', msg);
 		this.setAlexa(`Failure ${msg}`, `Failure due to error ${msg}`);
-		this.success();
+		this.success(false);
 	}
 
 	/**

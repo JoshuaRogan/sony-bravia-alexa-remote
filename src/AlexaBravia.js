@@ -14,6 +14,11 @@ const apps = {
 	sling: seqGetToApps + 'right',
 };
 
+// Additional commands to check
+const additionalCommands = {
+	unmute: true,
+}
+
 class AlexaBravia extends Alexa {
 
 	constructor(event, context, domain , port = 80) {
@@ -33,7 +38,9 @@ class AlexaBravia extends Alexa {
 			return this.remote.openAppSeq(apps[appName], appName);
 		}
 
-		return false;
+		this.fail(`${appName} isn't valid`);
+
+		return false; // Return promise
 	}
 
 	/**
@@ -54,10 +61,10 @@ class AlexaBravia extends Alexa {
 		this.debugLog(`Sending command ${commandName}`);
 
 		if(commandName === 'unmute') {
-			return this.remote.sendAction('mute')
-				.then( ()=> this.remote.sendAction('volumeup'));
+			return this.remote.sendAction('volume up')
+				.then( () => { return this.remote.sendAction('volume up'); });
 		} else {
-			if (this.remote.validAction(commandName)) {
+			if (this.remote.isValidAction(commandName)) {
 				return this.remote.sendAction(commandName);
 			}
 		}
@@ -91,12 +98,21 @@ class AlexaBravia extends Alexa {
 	}
 
 	/**
+	 * Checks the remote commands and custom commands to see if an action is valid
+	 * @return {Boolean}
+	 */
+	isValidAction(action) {
+		return this.remote.isValidAction(action) || additionalCommands[action] === true;
+	}
+
+	/**
 	 * Get the app name value in the slot
 	 * @return {String|Boolean}
 	 */
 	getAppNameValue() {
 		return this.getSlotValue('AppName');
 	}
+
 
 	/**
 	 * Handle all incoming intents
@@ -112,13 +128,14 @@ class AlexaBravia extends Alexa {
 				this.setTitle(`Sending action ${action}`);
 				this.setSpeechOutput(`Sending action ${action}`);
 
-				if(this.command(action)) {
-					this.success();
+				if(this.isValidAction(action)) {
+					this.command(action).then(() => this.success());
 				} else {
-					this.fail('Not a valid action');
+					this.fail(`${action} is not a valid action`);
 				}
+
 			} else {
-				this.fail('Action not found');
+				this.fail(`${action} is not found`);
 			}
 
 		} else if (this.getIntentName() == 'OpenAppIntent') {
@@ -127,8 +144,7 @@ class AlexaBravia extends Alexa {
 			if(this.isValidAppName(appName)) {
 				this.setTitle(`Opening app ${appName}`);
 				this.setSpeechOutput(`Opening app ${appName}`);
-				this.openApp(appName);
-				this.success();
+				this.openApp(appName).then(() => this.success());
 			} else {
 				this.fail(`${appName} is not a valid app name.`);
 			}

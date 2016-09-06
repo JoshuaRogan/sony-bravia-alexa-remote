@@ -193,7 +193,7 @@ class BraviaRemoteControl {
 	 * @param  {String}  action
 	 * @return {Boolean}
 	 */
-	validAction(action) {
+	isValidAction(action) {
 		return actionMap[this.getAction(action)] !== undefined;
 	}
 
